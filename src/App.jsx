@@ -564,45 +564,45 @@ function analyzeCase(text) {
     };
   }
 
-  // 对方做的难吃、我不想吃、对方怪我浪费：责任更多在“做得难吃还怪人不吃”的一方
+  // 对方做的难吃、我不想吃、对方怪我浪费：看实际情况分析，不一刀切；对方努力了要看见，同时不强迫吃、不听任用“浪费”施压
   if (hasBadCookingAndBlameWaste && hasCookingContext) {
-    yourScore = 62;
-    otherScore = 38;
+    yourScore = 50;
+    otherScore = 50;
 
     zh.fact =
-      "对方做了饭，你觉得不好吃所以没吃或没吃完，对方因此怪你浪费、不领情。";
+      "对方做了饭，你觉得不好吃所以没吃或没吃完，对方因此怪你浪费、不领情。双方对‘是否真的难吃’‘有没有看见对方努力’可能有不同感受。";
     en.fact =
-      "They cooked, you found it unappealing so you didn't eat or didn't finish, and they blamed you for wasting or not appreciating it.";
+      "They cooked, you found it unappealing so you didn't eat or didn't finish, and they blamed you for wasting or not appreciating it. You may disagree on how bad it was and whether the effort was seen.";
 
     zh.core =
-      "核心不是谁更挑剔，而是：食物不好吃时，不吃的选择是合理的；反过来用‘浪费’‘不领情’施压，是在用情绪绑架对方硬吃。责任更多在做得不好吃还怪人不吃的一方。";
+      "本庭按实际情况分析，不先入为主。做饭的一方付出了努力，需要被看见；同时口味是主观的，不强迫对方吃、也不用‘浪费’施压，是基本尊重。若一方用‘浪费’‘不领情’持续施压，责任会偏那一方；若另一方完全否定对方付出，责任会偏这一方。";
     en.core =
-      "The core isn't who's pickier, but that choosing not to eat when the food isn't good is reasonable. Pressuring with 'waste' or 'ungrateful' is emotional guilt-tripping. More responsibility lies with the one who made unappealing food and then blamed the other for not eating.";
+      "This court looks at the actual situation, without taking sides in advance. The one who cooked put in effort and deserves to be seen; at the same time, taste is subjective—not forcing the other to eat or pressuring with 'waste' is basic respect. If one keeps guilt-tripping with 'waste,' responsibility shifts that way; if the other dismisses the effort entirely, it shifts the other way.";
 
     zh.emotion =
-      "你不想吃难吃的东西是正常反应；被说浪费、不领情，会让人觉得自己的感受不被承认。";
+      "做饭的一方希望被看见、被肯定；没吃的一方可能觉得自己的口味没有被尊重，或被‘浪费’指责得很委屈。两边都有可理解的情绪。";
     en.emotion =
-      "Not wanting to eat unappealing food is a normal reaction; being called wasteful or ungrateful makes you feel your experience isn't acknowledged.";
+      "The cook wants to be seen and appreciated; the one who didn't eat may feel their taste wasn't respected or feel unfairly blamed for 'waste.' Both sides have understandable feelings.";
 
     zh.boundary =
-      "做饭的心意可以感谢，但‘难吃也要吃完否则就是浪费’不是健康的边界。可以一起商量：下次少做一点、或者谁负责试味，而不是单方面要求对方必须吃。";
+      "可以感谢对方的心意，同时表达口味偏好；可以希望对方多少尝一点以示尊重，但不该用‘浪费’绑架对方硬吃。一起商量：下次少做、做前问想吃什么、或谁试味，比单方面要求更健康。";
     en.boundary =
-      "You can appreciate the effort, but 'you must finish it or you're wasteful' isn't a healthy boundary. You can agree to cook less next time or share tasting duty, rather than demanding the other person eat anyway.";
+      "You can thank the effort and still express your taste; you can hope they try a bit to show respect, but shouldn't guilt them into finishing. Agree together: cook less, ask what they want first, or share tasting—healthier than one-sided demands.";
 
     zh.adviceForYou =
-      "你可以先说：谢谢你的心意，但这次真的不合我口味，不是故意浪费。以后我们可以一起商量做多少、做什么，避免你辛苦做了我又吃不下。";
+      "如果你是做饭的一方：可以问对方‘哪里不合口味’，下次改进，而不是只怪浪费。如果你是没吃的一方：可以先肯定对方辛苦，再具体说‘这次哪里不合我口味’，并提议一起商量下次做多少、做什么。";
     en.adviceForYou =
-      "You can say: I appreciate the effort, but this one really wasn't to my taste—I'm not trying to waste. Next time we can decide together how much to make and what, so you don't cook a lot and I can't eat it.";
+      "If you cooked: ask what didn't work for them and try to improve next time, rather than only blaming waste. If you didn't eat: acknowledge their effort first, then say what didn't work for you and suggest deciding together how much to make and what next time.";
 
     zh.adviceForThem =
-      "对方可以试着接受：口味是主观的，对方不吃不代表不领情。下次可以少做、或问一句想吃什么，比事后怪‘浪费’更能减少冲突。";
+      "对方也需要被听见：要么是‘我有看见你的付出，只是这次真的不合口味’，要么是‘你可以表达口味，但别完全否定我的努力’。根据实际情况，谁更愿意沟通、谁更在用指责施压，会影响责任判断。";
     en.adviceForThem =
-      "They can try to accept: taste is subjective; not eating doesn't mean ungrateful. Next time cook less or ask what they'd like—that reduces conflict more than blaming 'waste' afterward.";
+      "They need to be heard too: either 'I see your effort, it just wasn't to my taste this time,' or 'you can say what you like, but don't dismiss my effort entirely.' Depending on who's more willing to talk and who's pressuring with blame, responsibility may shift.";
 
     zh.verdict =
-      "本案责任更多在做得难吃还怪人不吃、用‘浪费’施压的一方。不强迫对方吃不合口味的东西，是基本尊重。";
+      "本案本庭不做一刀切。双方都要看见对方的付出和感受：做饭的努力值得被肯定，不强迫吃、不用‘浪费’施压也是底线。和解建议：少做多问、具体说口味、不拿浪费吵架。";
     en.verdict =
-      "In this case, more responsibility lies with the one who made unappealing food and then pressured the other with 'waste.' Not forcing someone to eat what they don't like is basic respect.";
+      "This court doesn't apply a single rule. Both sides need to see the other's effort and feelings: the cook's effort deserves recognition; not forcing eating or pressuring with 'waste' is a baseline. For reconciliation: cook less, ask more, be specific about taste, don't fight over waste.";
 
     return {
       zh,
@@ -610,12 +610,12 @@ function analyzeCase(text) {
       yourScore,
       otherScore,
       icebreaker: {
-        zh: "一起约定：以后做饭先少做一点，或做前问一句对方想吃什么；吃不下可以留到下一顿，不拿‘浪费’来吵架。",
-        en: "Agree: cook smaller portions next time or ask what they want first; leftovers are fine, don't fight over 'waste.'",
+        zh: "一起约定：以后做饭先少做一点，或做前问一句对方想吃什么；吃不下可以留到下一顿，不拿‘浪费’来吵架。同时没吃的一方可以说一句：谢谢你的心意，这次哪里不合我口味我下次直接说。",
+        en: "Agree: cook smaller portions or ask what they want first; leftovers are fine, don't fight over 'waste.' The one who didn't eat can add: thanks for the effort, I'll tell you what didn't work for me next time.",
       },
       longterm: {
-        zh: "口味不同很正常；用‘浪费’‘不领情’绑架对方吃，会伤关系。少做、多问，比硬要对方吃完更健康。",
-        en: "Different tastes are normal; guilting someone into eating with 'waste' or 'ungrateful' hurts the relationship. Cook less, ask more—healthier than demanding they finish.",
+        zh: "口味不同很正常；既看见对方做饭的努力，也不强迫吃、不用‘浪费’施压，少做多问比硬要吃完更健康。",
+        en: "Different tastes are normal; see the cook's effort, and don't force eating or pressure with 'waste.' Cook less, ask more—healthier than demanding they finish.",
       },
     };
   }
@@ -625,9 +625,11 @@ function analyzeCase(text) {
   const enFacts = [];
 
   if (hasTimeBreak) {
-    zhFacts.push("你们之间有明确的约定或期待，但现实中经常被临时改变或放下，导致期待落空。");
+    zhFacts.push(
+      "你们之间有明确的约定或期待，但现实中经常被临时改变或放下，导致期待落空。爽约的一方通常更不占理；若事后态度诚恳、有解释或补偿，可适度平衡；和解时一定要认真听委屈一方的表达。"
+    );
     enFacts.push(
-      "You two had agreements or plans, but they were changed or dropped at the last minute, leaving expectations unmet."
+      "You two had agreements or plans, but they were changed or dropped at the last minute, leaving expectations unmet. The one who broke the plan usually bears more responsibility; if they later show genuine apology, explanation, or make-up, that can balance somewhat—and when making up, the hurt party's voice must be heard."
     );
     yourScore += 5;
     otherScore -= 5;
@@ -639,12 +641,14 @@ function analyzeCase(text) {
     );
   }
   if (hasThirdParty) {
-    zhFacts.push("你注意到对方和第三人的互动频率、语气或边界，让你开始不安。");
-    enFacts.push(
-      "You noticed the frequency, tone, or boundaries of their interactions with a third person and started to feel uneasy."
+    zhFacts.push(
+      "你注意到对方和第三人的互动频率、语气或边界，让你开始不安。有第三者、暧昧、没边界感或与异性过度分享生活而不顾伴侣感受的一方，更不占理。"
     );
-    yourScore += 8;
-    otherScore -= 8;
+    enFacts.push(
+      "You noticed the frequency, tone, or boundaries of their interactions with a third person and started to feel uneasy. The one with third-party involvement, flirtation, poor boundaries, or oversharing life with others while ignoring their partner's feelings is more at fault."
+    );
+    yourScore += 10;
+    otherScore -= 10;
   }
   if (hasCold) {
     zhFacts.push("当关系出现问题时，对方更倾向于用沉默、拉黑或失联来处理，而不是正面回应。");
@@ -676,15 +680,19 @@ function analyzeCase(text) {
   const enCoreParts = [];
 
   if (hasTimeBreak || hasWorkOrDuty) {
-    zhCoreParts.push("表面上像是时间安排或现实压力的问题，核心其实是你们如何对齐期待、及时说明变化。");
+    zhCoreParts.push(
+      "表面上像是时间安排或现实压力的问题，核心其实是你们如何对齐期待、及时说明变化。爽约的一方更不占理；若态度良好或有补偿，可适度平衡；给出和解建议时，必须听委屈一方的表达。"
+    );
     enCoreParts.push(
-      "On the surface this looks like a scheduling or practical pressure issue, but the core is how you align expectations and signal changes."
+      "On the surface this looks like a scheduling or practical pressure issue, but the core is how you align expectations and signal changes. The one who broke the plan is more at fault; if they show good attitude or make-up, that can balance somewhat—and any reconciliation must center on hearing the hurt party's side."
     );
   }
   if (hasThirdParty) {
-    zhCoreParts.push("同时也夹杂着边界和信任：对方和他人的距离是否清晰、是否主动让你安心。");
+    zhCoreParts.push(
+      "与异性暧昧、没边界感、和异性分享生活而不顾伴侣感受的一方，在本案中更不占理。边界和信任是核心：对方和他人的距离是否清晰、是否主动让你安心。"
+    );
     enCoreParts.push(
-      "It also strongly involves boundaries and trust: how clearly they define distance with others and whether they actively reassure you."
+      "The one who has blurred boundaries with others, flirtation, or shares life with another person without regard for their partner is more at fault in this case. Boundaries and trust are central: how clearly they draw the line with others and whether they actively reassure you."
     );
   }
   if (hasCold) {
@@ -777,8 +785,8 @@ function analyzeCase(text) {
   en.adviceForThem =
     "If they’re open to advice, what this situation really calls for is timely updates, honest answers, and willingness to adjust habits—not just saying 'don’t overthink.'";
 
-  // 谁更占理：根据维度粗略调整
-  if (hasThirdParty || hasCold || hasTrust) {
+  // 谁更占理：根据维度调整（第三者/暧昧/没边界感明确不占理，已在上文 hasThirdParty 中 +10）
+  if (hasCold || hasTrust) {
     yourScore += 8;
     otherScore -= 8;
   }
@@ -797,10 +805,10 @@ function analyzeCase(text) {
 
   zh.verdict =
     zh.verdict ||
-    "本庭不做明显倾斜。双方都有各自的感受和立场；如果想要关系继续走下去，接下来要从‘吵这一件事’，变成一起商量新的相处规则。";
+    "本庭根据具体事件分析，不先入为主支持某一方。双方都有各自的感受和立场；如果想要关系继续走下去，接下来要从‘吵这一件事’，变成一起商量新的相处规则。";
   en.verdict =
     en.verdict ||
-    "This court does not lean clearly to either side. Both of you have your own feelings and positions; if you want the relationship to continue, the next step is to move from arguing about this one event to designing new rules for how you relate.";
+    "This court analyzes the specific situation and does not presume to side with either party. Both of you have your own feelings and positions; if you want the relationship to continue, the next step is to move from arguing about this one event to designing new rules for how you relate.";
 
   return { zh, en, yourScore, otherScore };
 }
