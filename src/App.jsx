@@ -159,87 +159,449 @@ const copy = {
   },
 };
 
+// 更通用的基于“维度”的分析，而不是枚举具体事件类型
 function analyzeCase(text) {
   const normalized = text.trim();
   if (!normalized) return null;
 
-  const hasOvertime = /(工作|加班|开会|老板|同事|公司|交接|work|overtime|boss|meeting|coworker|office)/i.test(normalized);
-  const hasMessage = /(消息|回消息|聊天|微信|短信|发消息|message|text|reply|chat)/i.test(normalized);
-  const hasLateNight = /(半夜|凌晨|很晚|两点|夜里|late|midnight|2am|night)/i.test(normalized);
-  const hasPlanBreak = /(临时|放鸽子|没做到|改时间|没兑现|失约|cancel|reschedule|changed plans|last minute)/i.test(normalized);
-  const hasEmotion = /(生气|难过|委屈|失望|不开心|崩溃|烦|angry|upset|hurt|disappointed|sad)/i.test(normalized);
-  const hasTrust = /(信任|边界|透明|安全感|隐瞒|不说|trust|boundary|transparent|safety|hide)/i.test(normalized);
+  // 检测一组“维度”而不是具体场景
+  const hasTimeBreak =
+    /(临时|放鸽子|没做到|改时间|没兑现|失约|等了很久|爽约|cancel|reschedule|no show|last minute)/i.test(
+      normalized
+    );
+  const hasWorkOrDuty =
+    /(工作|加班|开会|老板|同事|公司|家务|照顾|带孩子|work|overtime|meeting|shift|duty)/i.test(normalized);
+  const hasThirdParty =
+    /(前任|暧昧|喜欢的人|别的女生|别的男生|同事暧昧|出轨|劈腿|小三|第三者|flirt|cheat|affair|crush|ex\b)/i.test(
+      normalized
+    );
+  const hasCold =
+    /(冷暴力|拉黑|不回|已读不回|消失|不理我|冷淡|冷漠|ignore|ghost|silent|silent treatment)/i.test(
+      normalized
+    );
+  const hasMoney =
+    /(钱|花销|房租|房贷|转账|借钱|AA|付钱|报销|工资|income|money|bill|rent|pay|transfer|spend)/i.test(
+      normalized
+    );
+  const hasFamily =
+    /(父母|妈妈|爸爸|家里人|家人|公婆|婆婆|岳父母|原生家庭|父母干预|parents|family|in‑laws|inlaws)/i.test(
+      normalized
+    );
+  const hasTrust =
+    /(信任|边界|透明|安全感|隐瞒|不说|欺骗|撒谎|骗我|trust|boundary|transparent|safety|hide|lie)/i.test(
+      normalized
+    );
+  const hasEmotion =
+    /(生气|难过|委屈|失望|不开心|崩溃|烦|心凉|受伤|心痛|angry|upset|hurt|disappointed|sad)/i.test(
+      normalized
+    );
+  const hasRepeat =
+    /(总是|老是|每次|一次又一次|很多次|一直|长期|for a long time|again and again|every time)/i.test(
+      normalized
+    );
 
-  let yourScore = 63;
-  let otherScore = 37;
+  // 纯“偏好/选择”类小冲突（吃什么、去哪玩之类）
+  const hasPreferenceConflict =
+    /(吃什么|去哪|看什么|玩什么|点什么|点餐|外卖|电影|餐厅|口味|想吃|想去|吃肯德基|吃麦当劳|吃披萨|吃火锅|choose|pick|decide where|what to eat)/i.test(
+      normalized
+    );
 
-  let zh = {
-    core: "这件事表面上像是时间安排冲突，核心其实是沟通质量不够。",
-    fact: "你们原本有共同安排，但中途出现了新的事务，导致陪伴被打断。",
-    emotion: "你不一定是在争这几十分钟，而是在意自己是不是被好好说明、被放在心上。",
-    boundary: "边界问题不一定是不能回消息，而是回什么、为什么回、需不需要提前交代。",
-    adviceForYou: "表达不满时，尽量把重点放在‘我需要被说明’而不是‘你不能做这件事’。",
-    adviceForThem: "如果对方临时要处理事情，应该明确说明对象、原因、预计时长，而不是让你一直等。",
-    verdict: "问题不在忙，而在没有把你从‘被动等的人’变成‘被同步的人’。",
+  // 共同生活 / 攒钱 / 未来开支（两人一起过日子、还没经济自由）
+  const hasSharedLife =
+    /(攒钱|生活开支|共同生活|经济自由|生活|过日子|未来|存钱|浪费钱|还没到|save|save up|life together|shared life|future|living expenses|waste)/i.test(
+      normalized
+    );
+
+  // 提交者忘记重要日期/礼物（生日、纪念日等），对方受伤
+  const hasForgottenByMe =
+    /(我忘记|我忘了|我没准备|忘记准备|忘了准备|忘了买|忘记买|忘记送|忘了送|没准备礼物|没送礼物|forgot|forget to prepare)/i.test(
+      normalized
+    );
+  const hasImportantDate =
+    /(生日|纪念日|周年|礼物|惊喜|birthday|anniversary|gift|surprise)/i.test(normalized);
+
+  let yourScore = 60;
+  let otherScore = 40;
+
+  const zh = {
+    core: "",
+    fact: "",
+    emotion: "",
+    boundary: "",
+    adviceForYou: "",
+    adviceForThem: "",
+    verdict: "",
   };
 
-  let en = {
-    core: "This looks like a scheduling conflict on the surface, but the deeper issue is weak communication quality.",
-    fact: "You had time planned together, but a new task interrupted the connection.",
-    emotion: "You are not only upset about the lost time, but about whether you were clearly informed and emotionally considered.",
-    boundary: "The boundary issue is not whether messages can be answered, but whether the reason and timing are communicated.",
-    adviceForYou: "When you bring this up, focus on 'I need clarity and updates' rather than 'you are not allowed to do this.'",
-    adviceForThem: "If they need to handle something suddenly, they should explain the reason and expected timing instead of making you wait in uncertainty.",
-    verdict: "The problem is not being busy. The problem is leaving you as the passive person who waits instead of the person who is kept in the loop.",
+  const en = {
+    core: "",
+    fact: "",
+    emotion: "",
+    boundary: "",
+    adviceForYou: "",
+    adviceForThem: "",
+    verdict: "",
   };
 
-  if (hasOvertime && hasMessage) {
-    yourScore = 72;
-    otherScore = 28;
-    zh.core = "问题核心不是工作本身，而是工作侵入你们相处时间时，对方没有给出足够透明的说明。";
-    zh.fact = "原本说好的相处安排，被临时工作与沟通事务打断，而且信息披露不足。";
-    zh.boundary = "健康的边界不是禁止处理工作，而是当工作影响亲密关系时，要及时同步，不让伴侣靠猜。";
-    zh.adviceForThem = "下次一旦需要处理突发工作，最好直接说清：在和谁沟通、为什么现在必须处理、大概多久结束。";
-    zh.verdict = "这是一次典型的‘突发工作 + 低透明沟通’事件，责任重点在说明义务没有做到位。";
+  // 如果只有偏好冲突，没有工作/金钱/信任等严重维度，就走一套更轻的小分歧模板
+  const onlyPreference =
+    hasPreferenceConflict &&
+    !hasTimeBreak &&
+    !hasWorkOrDuty &&
+    !hasThirdParty &&
+    !hasCold &&
+    !hasMoney &&
+    !hasFamily &&
+    !hasTrust;
 
-    en.core = "The real issue is not work itself, but the lack of transparency when work interrupts your shared time.";
-    en.fact = "A planned moment together was interrupted by last-minute work and communication tasks, with too little explanation.";
-    en.boundary = "A healthy boundary is not banning work. It means updating your partner clearly when work affects the relationship.";
-    en.adviceForThem = "When unexpected work shows up, they should say who it involves, why it matters now, and roughly when they will be back.";
-    en.verdict = "This is a classic case of sudden work plus low-transparency communication, and the bigger responsibility lies in the lack of explanation.";
+  if (onlyPreference) {
+    yourScore = 52;
+    otherScore = 48;
+
+    zh.fact =
+      "这次冲突本质上是一场‘偏好之争’：你们在吃什么、去哪或怎么安排上意见不同，最后升级成了情绪对抗。";
+    en.fact =
+      "This conflict is mainly about preferences: you two wanted different things (where to go, what to eat), and it escalated into an emotional fight.";
+
+    zh.core =
+      "核心不是谁的选择更对，而是你们暂时缺少一套‘遇到小分歧时怎么协调’的规则，所以每次都要靠吵架来决定。";
+    en.core =
+      "The core is not whose choice is objectively better, but that you lack a shared rule for handling small preference clashes, so arguments become the default decision tool.";
+
+    zh.emotion =
+      "你在情绪里感受到的，可能不是这顿饭本身，而是：我的想法有没有被当回事、我们是不是总是在抢掌控权。";
+    en.emotion =
+      "Emotionally, it’s less about this one meal and more about whether your wishes are taken seriously and who gets to steer the situation.";
+
+    zh.boundary =
+      "这种小事的边界，不在于谁先让步，而在于能不能约定：下次遇到类似情况，用轮流决定、折中方案或预算上限来解决，而不是用吵架。";
+    en.boundary =
+      "Boundaries here aren’t about banning choices, but about agreeing on patterns: taking turns deciding, finding middle options, or setting simple rules so you don’t have to fight each time.";
+
+    zh.adviceForYou =
+      "你可以试着把这次吵架翻译成一句话告诉对方：我在意的是‘被尊重参与决定’，而不是一定要吃哪一家。然后提议一两个你也能接受的折中方案。";
+    en.adviceForYou =
+      "Try translating the fight into one clear sentence: 'What I care about is being part of the decision, not which exact place we choose,' and then offer one or two compromises you’d genuinely accept.";
+
+    zh.adviceForThem =
+      "如果对方愿意听建议，他/她可以练习在这种小选择上多问一句‘你更想要哪个’，并主动提出轮流决定或组合方案，而不是直接拍板。";
+    en.adviceForThem =
+      "If they’re open to advice, they can practice asking 'what do you prefer this time?' and suggesting turn‑taking or mix‑and‑match options instead of deciding unilaterally.";
+
+    zh.verdict =
+      "就本案而言，你们更多是在为‘谁说了算’较劲，谁对谁错都不算绝对。比起判谁输赢，更重要的是一起发明一套你们都舒服的“小事决策方式”。";
+    en.verdict =
+      "In this case, the struggle is mostly about 'who gets to decide' rather than clear right or wrong. More useful than declaring a winner is designing a small‑decision routine you both feel good about.";
+
+    return {
+      zh,
+      en,
+      yourScore,
+      otherScore,
+      icebreaker: {
+        zh: "约定：下次遇到‘吃什么、去哪’这类小事，轮流决定或一人提两个选项让对方选，不再为这一顿吵。",
+        en: "Agree: next time for small choices like where to eat, take turns deciding or one suggests two options for the other to pick—no fighting over this one.",
+      },
+      longterm: {
+        zh: "小事上建立‘轮流拍板’或‘折中方案’的习惯，比每次争赢更有助于关系。",
+        en: "Building a habit of turn‑taking or compromise on small things helps the relationship more than winning each argument.",
+      },
+    };
   }
 
-  if (hasLateNight && hasMessage) {
-    yourScore += 8;
-    otherScore -= 8;
-    zh.core = "半夜处理消息会天然放大不安感，所以‘我在回消息’这种模糊表述很容易引发误会。";
-    zh.emotion = "你会生气，不只是因为他在忙，而是因为在最容易让人多想的时间点，他却给了最模糊的信息。";
-    zh.verdict = "凌晨时段的模糊沟通，几乎等于主动制造误会。";
+  // 金钱 + 共同生活：一方大额享乐消费，另一方担心生活开支，双方都有道理，判决更平衡
+  if (hasMoney && hasSharedLife) {
+    yourScore = 50;
+    otherScore = 50;
 
-    en.core = "Late-night messaging naturally amplifies insecurity, so a vague line like 'I'm replying to messages' easily creates misunderstanding.";
-    en.emotion = "You are upset not just because they were busy, but because they gave the vaguest possible answer at the exact time most likely to trigger overthinking.";
-    en.verdict = "Late-night vague communication almost creates misunderstanding on purpose.";
+    zh.fact =
+      "你们在共同生活或为未来攒钱，其中一方想花一笔钱在个人享乐上（比如买电脑、买包），另一方觉得浪费、希望把钱用在生活或储蓄上。";
+    en.fact =
+      "You two are building a shared life or saving for the future. One wants to spend on personal pleasure (e.g. a computer, a bag), the other thinks it's wasteful and wants the money for living expenses or savings.";
+
+    zh.core =
+      "核心不是‘我的钱我做主’vs‘你乱花钱’，而是：你们对‘共同生活’的边界还没对齐。一方享乐消费，另一方可能就要多承担生活开支，而花钱的那一方有没有认真考虑过对方的负担和感受。";
+    en.core =
+      "The core is not 'my money my choice' vs 'you waste money,' but that you haven't aligned on what 'shared life' means. One person's pleasure spending may mean the other bears more living costs—and the spender may not have seriously considered that burden.";
+
+    zh.emotion =
+      "花钱的一方在意自主权，省钱的一方在意被看见、被一起规划未来。两边都有合理诉求，问题在于有没有把对方纳入考量。";
+    en.emotion =
+      "The spender cares about autonomy; the saver cares about being seen and planning the future together. Both have valid feelings—the issue is whether each has factored the other in.";
+
+    zh.boundary =
+      "共同生活的金钱边界，不是谁对谁错，而是：大额支出要不要提前商量、享乐和储蓄的比例怎么分配、双方对‘我们还没到经济自由’这件事是否认同。";
+    en.boundary =
+      "Financial boundaries in shared life aren't about right or wrong, but about: whether big purchases need prior discussion, how to balance pleasure vs savings, and whether you both agree you're not yet financially free.";
+
+    zh.adviceForYou =
+      "如果你是花钱的一方：可以先承认对方的担忧有道理，再说明这笔钱对你意味着什么、你愿意在别的地方怎么补偿（比如接下来几个月多承担一点生活开支）。如果你是省钱的一方：可以表达‘我不是要控制你，而是希望我们一起来规划’，并提议一个你们都舒服的‘大额支出门槛’——超过多少就一起商量。";
+    en.adviceForYou =
+      "If you're the spender: acknowledge their concern, explain what this purchase means to you, and offer to offset it (e.g. cover more living costs for a few months). If you're the saver: say 'I'm not trying to control you, but I want us to plan together,' and suggest a threshold—above X amount, you discuss first.";
+
+    zh.adviceForThem =
+      "对方也需要听见：这不是在否定你的自主权，而是在问‘我们’的边界在哪里。愿意一起定规则，比争谁对谁错更有用。";
+    en.adviceForThem =
+      "They also need to hear: this isn't about denying your autonomy, but about defining 'our' boundaries. Agreeing on rules together is more useful than arguing who's right.";
+
+    zh.verdict =
+      "本案双方都有道理，本庭不做明显倾斜。花钱的一方有支配自己收入的权利，但共同生活时，大额享乐消费会加重另一方的负担；省钱的一方有理由担心未来，但也要尊重对方对‘自己的钱’的感受。更关键的是：一起定一个‘大额支出怎么商量’的规则，而不是每次都为这一笔吵。";
+    en.verdict =
+      "Both sides have valid points; this court does not lean strongly either way. The spender has a right to their income, but in shared life, big pleasure spending shifts burden to the other; the saver has reason to worry, but should also respect the other's sense of ownership. What matters more: agree on a rule for when big purchases need discussion, instead of fighting over each one.";
+
+    return {
+      zh,
+      en,
+      yourScore,
+      otherScore,
+      icebreaker: {
+        zh: "今晚一起写一条规则：超过多少金额的支出，我们会先跟对方说一声再决定？写下来贴在冰箱上，下次就不会为‘你为什么不商量’吵。",
+        en: "Tonight write down one rule: above what amount do we check in with each other before spending? Put it on the fridge so you don’t fight over 'why didn’t you ask' next time.",
+      },
+      longterm: {
+        zh: "共同生活的钱，提前定好‘大额门槛’和‘享乐 vs 储蓄’的大致比例，比事后翻旧账有用得多。",
+        en: "For shared life money, agreeing in advance on a 'big purchase threshold' and a rough balance of fun vs savings beats rehashing the same fight later.",
+      },
+    };
   }
 
-  if (hasPlanBreak) {
+  // 忘记重要日期/礼物：提交者忘记生日、纪念日等，对方受伤，责任更多在忘记的一方
+  if (hasForgottenByMe && hasImportantDate) {
+    yourScore = 35;
+    otherScore = 65;
+
+    zh.fact =
+      "你在对方的重要日子（生日、纪念日等）忘记准备礼物或表达，对方因为感到被忽视而很难过，你们因此吵架。";
+    en.fact =
+      "You forgot to prepare a gift or express care on an important day (birthday, anniversary, etc.), and they felt hurt and neglected, leading to an argument.";
+
+    zh.core =
+      "核心不是‘记不记得’的记性问题，而是：对方有没有被放在重要位置。忘记生日、纪念日，会让对方觉得‘我在你心里不重要’，这种感受是合理的。";
+    en.core =
+      "The core is not about memory, but about whether they feel prioritized. Forgetting birthdays or anniversaries makes them feel 'I’m not important to you'—and that feeling is valid.";
+
+    zh.emotion =
+      "对方难过的，不只是没收到礼物，而是：这么重要的日子你都不记得，我是不是在你心里很边缘。";
+    en.emotion =
+      "What hurts them is not just the missing gift, but the feeling that if you don’t remember this day, maybe they’re not on your mind at all.";
+
+    zh.boundary =
+      "亲密关系里，对重要日子的重视是一种基本尊重。不是要求你记性多好，而是：可以提前设提醒、提前准备，让对方感受到你愿意花心思。";
+    en.boundary =
+      "In close relationships, honoring important dates is a basic form of respect. It’s not about having perfect memory, but about setting reminders and preparing in advance so they feel you’re willing to put in effort.";
+
+    zh.adviceForYou =
+      "你可以先诚恳道歉，承认这件事确实让对方受伤了。然后主动提出：以后会设提醒、提前准备，并问对方‘有没有特别在意的事，希望我这次怎么补上’。";
+    en.adviceForYou =
+      "Start with a sincere apology and acknowledge that this hurt them. Then offer to set reminders and prepare in advance next time, and ask: 'Is there something specific you’d like me to do to make it up?'";
+
+    zh.adviceForThem =
+      "对方可以表达：我在意的不是礼物本身，而是你有没有把我放在心上。如果对方愿意道歉并改进，可以一起定一个‘重要日子提醒’的小规则，而不是一直翻旧账。";
+    en.adviceForThem =
+      "They can say: what matters isn’t the gift itself, but whether you hold them in mind. If you’re willing to apologize and change, agree on a simple reminder rule for important dates instead of dwelling on old resentments.";
+
+    zh.verdict =
+      "本案责任更多在忘记的一方。对方因为感到被忽视而难过，是合理的。忘记的一方需要承认疏忽、道歉，并用实际行动（设提醒、补上心意）来弥补，而不是只说‘我记性不好’就带过。";
+    en.verdict =
+      "In this case, more responsibility lies with the one who forgot. The other’s hurt feelings are valid. The one who forgot needs to acknowledge the oversight, apologize, and make it up with concrete actions (reminders, a thoughtful gesture)—not just dismiss it with 'I have a bad memory.'";
+
+    return {
+      zh,
+      en,
+      yourScore,
+      otherScore,
+      icebreaker: {
+        zh: "忘记的一方立刻在手机里设好对方生日和纪念日的提醒，并问一句：这次你希望我怎么补上？一顿饭、一个小礼物，还是专门留出一晚只属于你们的时间。",
+        en: "The one who forgot sets a phone reminder for their birthday and anniversary right away, and asks: 'How would you like me to make it up this time?'—a meal, a small gift, or a night just for the two of you.",
+      },
+      longterm: {
+        zh: "重要日子提前设提醒、提前准备，让对方感到‘你愿意花心思’，比事后解释‘我记性差’更能维护关系。",
+        en: "Setting reminders and preparing in advance for important dates shows 'you’re willing to put in effort'—that does more for the relationship than explaining afterward that you have a bad memory.",
+      },
+    };
+  }
+
+  // 事实层面：根据命中的维度拼接
+  const zhFacts = [];
+  const enFacts = [];
+
+  if (hasTimeBreak) {
+    zhFacts.push("你们之间有明确的约定或期待，但现实中经常被临时改变或放下，导致期待落空。");
+    enFacts.push(
+      "You two had agreements or plans, but they were changed or dropped at the last minute, leaving expectations unmet."
+    );
     yourScore += 5;
     otherScore -= 5;
-    zh.fact = "你们本来有约定，但现实里出现临时变动，结果是期待落空。";
-    zh.adviceForYou = "你可以直接区分两件事：一件是理解突发情况，一件是不能接受被临时晾着。";
-    zh.adviceForThem = "取消或改计划不可怕，可怕的是只报结果、不交代过程，让你感觉自己不重要。";
-
-    en.fact = "You had a shared plan, then a last-minute change interrupted it and left one person disappointed.";
-    en.adviceForYou = "Separate two things clearly: understanding the emergency, and still not accepting being left hanging without explanation.";
-    en.adviceForThem = "Changing plans is not the worst part. The worst part is reporting only the result and not the process, which makes you feel unimportant.";
+  }
+  if (hasWorkOrDuty) {
+    zhFacts.push("对方把工作或其他责任放进了你们的相处时间里，现实压力客观存在。");
+    enFacts.push(
+      "Work or other duties are intruding into your shared time together, and there is some objective pressure."
+    );
+  }
+  if (hasThirdParty) {
+    zhFacts.push("你注意到对方和第三人的互动频率、语气或边界，让你开始不安。");
+    enFacts.push(
+      "You noticed the frequency, tone, or boundaries of their interactions with a third person and started to feel uneasy."
+    );
+    yourScore += 8;
+    otherScore -= 8;
+  }
+  if (hasCold) {
+    zhFacts.push("当关系出现问题时，对方更倾向于用沉默、拉黑或失联来处理，而不是正面回应。");
+    enFacts.push(
+      "When there is tension, they tend to use silence, blocking, or disappearing instead of responding directly."
+    );
+    yourScore += 10;
+    otherScore -= 10;
+  }
+  if (hasMoney) {
+    zhFacts.push("在金钱或资源分配上，你感受到付出与回报之间不太平衡。");
+    enFacts.push("Around money or shared resources, you feel an imbalance between what each of you gives and receives.");
+  }
+  if (hasFamily) {
+    zhFacts.push("原生家庭或长辈的意见频繁进入你们的关系决策里。");
+    enFacts.push("Your families or parents are frequently involved in decisions that affect your relationship.");
   }
 
+  if (zhFacts.length === 0) {
+    zhFacts.push("这件事牵涉到你们的相处方式、期待落差和沟通方式。");
+    enFacts.push("This situation involves how you spend time together, mismatched expectations, and communication style.");
+  }
+
+  zh.fact = zhFacts.join(" ");
+  en.fact = enFacts.join(" ");
+
+  // 核心与边界：组合多个维度
+  const zhCoreParts = [];
+  const enCoreParts = [];
+
+  if (hasTimeBreak || hasWorkOrDuty) {
+    zhCoreParts.push("表面上像是时间安排或现实压力的问题，核心其实是你们如何对齐期待、及时说明变化。");
+    enCoreParts.push(
+      "On the surface this looks like a scheduling or practical pressure issue, but the core is how you align expectations and signal changes."
+    );
+  }
+  if (hasThirdParty) {
+    zhCoreParts.push("同时也夹杂着边界和信任：对方和他人的距离是否清晰、是否主动让你安心。");
+    enCoreParts.push(
+      "It also strongly involves boundaries and trust: how clearly they define distance with others and whether they actively reassure you."
+    );
+  }
+  if (hasCold) {
+    zhCoreParts.push("更深一层是冲突处理方式：用消失和冷处理，会让安全感被一点点掏空。");
+    enCoreParts.push(
+      "Deeper down, this is about conflict style: using disappearance and silence slowly erodes your sense of safety."
+    );
+  }
+  if (hasMoney) {
+    zhCoreParts.push("金钱分配背后，其实是在问：我们是不是在同一条船上，还是有人在默默多扛。");
+    enCoreParts.push(
+      "Behind money questions lies: are we truly in the same boat, or is one person silently carrying more than the other?"
+    );
+  }
+  if (hasFamily) {
+    zhCoreParts.push("还有‘我们的小家’和‘原生家庭’之间的站位：谁的话在亲密关系里更优先。");
+    enCoreParts.push(
+      "There is also the tension between 'our relationship' and the original family: whose voice has priority in intimate decisions."
+    );
+  }
+
+  if (zhCoreParts.length === 0) {
+    zhCoreParts.push("总体来说，这是一次关于被看见、被解释清楚、以及被放在什么位置的拉扯。");
+    enCoreParts.push(
+      "Overall, this is a tug‑of‑war about being seen, being given clear explanations, and understanding where you stand in their priorities."
+    );
+  }
+
+  zh.core = zhCoreParts.join(" ");
+  en.core = enCoreParts.join(" ");
+
+  // 情绪与建议
   if (hasEmotion || hasTrust) {
-    zh.emotion = "你现在在意的已经不是单一事件，而是这件事是否再次证明：你的安全感总要靠自己硬扛。";
-    en.emotion = "What hurts now is not just one incident, but the fear that your sense of security always has to be carried alone.";
+    zh.emotion =
+      "你现在难过的，已经不只是这一次具体事件，而是它像在重复证明：你的安全感需要靠自己扛着。";
+    en.emotion =
+      "What hurts is no longer just this single event; it feels like another proof that your sense of safety has to be carried alone.";
+  } else {
+    zh.emotion =
+      "即使你在讲述时很冷静，这件事背后也有失衡和不被理解的感觉，只是你暂时把它压住了。";
+    en.emotion =
+      "Even if you sound calm describing it, there is an underlying sense of imbalance and not being understood that you’re holding down.";
+  }
+
+  const zhBoundary = [];
+  const enBoundary = [];
+
+  if (hasTrust || hasThirdParty) {
+    zhBoundary.push("关于边界：重要的不是是否接触别人，而是这些接触是否在阳光下、是否让你被告知。");
+    enBoundary.push(
+      "For boundaries: the key is not whether they interact with others, but whether those interactions are transparent and shared with you."
+    );
+  }
+  if (hasCold) {
+    zhBoundary.push("关于冲突：沉默和拉黑会让界限变成‘你一开口，我就让你觉得自己多余’。");
+    enBoundary.push(
+      "For conflict: silence and blocking turn the boundary into 'if you speak up, I’ll make you feel unwanted.'"
+    );
+  }
+  if (hasMoney) {
+    zhBoundary.push("关于金钱：谁付多少可以商量，但谁的付出被当回事，这一点不能含糊。");
+    enBoundary.push(
+      "For money: exact numbers are negotiable, but whose contribution is recognized and appreciated is not."
+    );
+  }
+  if (hasFamily) {
+    zhBoundary.push("关于家人：成熟的边界不是和父母对立，而是先在你们两个人之间形成统一立场。");
+    enBoundary.push(
+      "For family: mature boundaries don’t mean fighting your parents, but forming a united stance between the two of you first."
+    );
+  }
+
+  if (zhBoundary.length === 0) {
+    zhBoundary.push("这件事提醒你们，需要把‘哪些事要提前说’和‘哪些底线不能碰’讲得更具体一点。");
+    enBoundary.push(
+      "This case suggests you two need clearer agreements on 'what must be shared in advance' and 'which lines cannot be crossed.'"
+    );
+  }
+
+  zh.boundary = zhBoundary.join(" ");
+  en.boundary = enBoundary.join(" ");
+
+  zh.adviceForYou =
+    "你可以尽量用具体情境来说：哪一个瞬间让你开始不安、你理想中希望他/她怎么做，而不是只说‘我很难受’。";
+  en.adviceForYou =
+    "Try to describe concrete moments: which exact scene made you uneasy, and what you would have wished them to do instead, rather than only saying 'I feel bad.'";
+
+  zh.adviceForThem =
+    "如果对方也愿意听建议，本案更需要的是：及时说明、诚实回应和愿意调整自己的习惯，而不是只说‘你别多想’。";
+  en.adviceForThem =
+    "If they’re open to advice, what this situation really calls for is timely updates, honest answers, and willingness to adjust habits—not just saying 'don’t overthink.'";
+
+  // 谁更占理：根据维度粗略调整
+  if (hasThirdParty || hasCold || hasTrust) {
+    yourScore += 8;
+    otherScore -= 8;
+  }
+  if (hasWorkOrDuty && !hasTimeBreak) {
+    // 对方有客观压力时略微平衡
+    yourScore -= 3;
+    otherScore += 3;
+  }
+  if (hasRepeat) {
+    yourScore += 5;
+    otherScore -= 5;
   }
 
   yourScore = Math.max(15, Math.min(85, yourScore));
   otherScore = 100 - yourScore;
+
+  zh.verdict =
+    zh.verdict ||
+    "综合来看，你在这件事里的感受是有依据的，但如果想要关系继续走下去，接下来要从‘吵这一件事’，变成一起商量新的相处规则。";
+  en.verdict =
+    en.verdict ||
+    "Overall, your feelings in this situation are grounded. If you both want to continue, the next step is to move from arguing about this one event to designing new rules for how you relate.";
 
   return { zh, en, yourScore, otherScore };
 }
@@ -286,14 +648,16 @@ export default function CatCourtWeb() {
   const judgeTitle = judge.title[lang];
   const judgeNote = judge.note[lang];
   const result = analysis ? analysis[lang] : null;
-  const currentIcebreaker = useMemo(
+  const fallbackIcebreaker = useMemo(
     () => pickBySeed(icebreakers[lang], submittedText || caseText || "starter", icebreakerSeed),
     [lang, submittedText, caseText, icebreakerSeed]
   );
-  const currentLongterm = useMemo(
+  const fallbackLongterm = useMemo(
     () => pickBySeed(relationshipTips[lang], submittedText || caseText || "tip", 9),
     [lang, submittedText, caseText]
   );
+  const currentIcebreaker = analysis?.icebreaker ? analysis.icebreaker[lang] : fallbackIcebreaker;
+  const currentLongterm = analysis?.longterm ? analysis.longterm[lang] : fallbackLongterm;
 
   const handleSubmit = () => {
     if (!caseText.trim()) return;
