@@ -206,6 +206,13 @@ function analyzeCase(text) {
       normalized
     );
 
+  // 对方做的难吃 / 我不想吃 / 对方怪我浪费：责任更多在“难吃还怪人不吃”的一方
+  const hasBadCookingAndBlameWaste =
+    /(难吃|不好吃|做糊了|做咸了|做坏了|太难吃).*?(不想吃|不吃|浪费)|(浪费).*?(难吃|不好吃)|(怪我浪费|说我浪费)/i.test(
+      normalized
+    );
+  const hasCookingContext = /(做饭|做菜|做的|煮的|做的饭|cooking|cook)/i.test(normalized);
+
   // 共同生活 / 攒钱 / 未来开支（两人一起过日子、还没经济自由）
   const hasSharedLife =
     /(攒钱|生活开支|共同生活|经济自由|生活|过日子|未来|存钱|浪费钱|还没到|save|save up|life together|shared life|future|living expenses|waste)/i.test(
@@ -220,8 +227,27 @@ function analyzeCase(text) {
   const hasImportantDate =
     /(生日|纪念日|周年|礼物|惊喜|birthday|anniversary|gift|surprise)/i.test(normalized);
 
-  let yourScore = 60;
-  let otherScore = 40;
+  // 在我家/我父母 + 让伴侣做事 + 没帮对方说话：责任更多在没护着伴侣的一方
+  const hasMyFamilyHost =
+    /(来我家|我家里|我父母|我妈|我爸|我爸妈|at my place|my parents)/i.test(normalized);
+  const hasFamilyAskedPartner =
+    /(让她|让他|让.*洗碗|让.*干活|叫.*洗碗|父母让|ask.*to (wash|do))/i.test(normalized);
+  const hasDidntStandUp =
+    /(没帮着她说话|没帮我说话|没站在我这边|没站在她那边|怪我没|没护着|没帮着说话|没帮我说|didn't stand up|didn't support)/i.test(
+      normalized
+    );
+
+  // 我过生日/节日没送对方礼物 + 否定对方想要礼物的感受（如「男人要什么礼物」「历史是女人收的」）：责任更多在否定感受的一方
+  const hasDismissPartnerGiftWish =
+    /(男人要什么礼物|女人收的|历史是女人收的|男生要什么礼物|要什么礼物啊)/i.test(normalized);
+  const hasNoGiftToPartnerAndTheyHurt =
+    /(没送|不送).*?(男朋友|女朋友|他|她|对方).*?(伤心|难过)|(对方|他|她).*?(伤心|难过).*?(没送|不送)/i.test(
+      normalized
+    );
+
+  // 默认不偏向提交者：从 50:50 起，只根据案件内容再加减
+  let yourScore = 50;
+  let otherScore = 50;
 
   const zh = {
     core: "",
@@ -421,6 +447,179 @@ function analyzeCase(text) {
     };
   }
 
+  // 在我家/我父母面前，家人让伴侣做事，而你没帮对方说话：责任更多在你
+  if (
+    hasFamily &&
+    hasMyFamilyHost &&
+    (hasFamilyAskedPartner || hasDidntStandUp) &&
+    hasDidntStandUp
+  ) {
+    yourScore = 35;
+    otherScore = 65;
+
+    zh.fact =
+      "对方以客人身份来到你家，你的家人让 TA 做了本该不属于客人做的事（比如洗碗、干活），而你在现场没有站出来替 TA 说话，TA 感到不被尊重、也不被你在乎。";
+    en.fact =
+      "They came to your home as a guest. Your family asked them to do something that isn't a guest's job (e.g. washing dishes, chores), and you didn't speak up for them. They felt disrespected and unsupported by you.";
+
+    zh.core =
+      "核心不是‘洗碗’本身，而是：在你的地盘、你的家人面前，你有没有把伴侣当成需要被护着的人。对方生气、怪你没帮着说话，是合理的。";
+    en.core =
+      "The core isn't the chore itself, but whether in your space, in front of your family, you showed that your partner deserves to be backed up. Their anger and blame that you didn't speak up are reasonable.";
+
+    zh.emotion =
+      "对方难过的，不只是被使唤，而是：在你家人面前，你选择了沉默或站家人那边，TA 会觉得自己是外人、你靠不住。";
+    en.emotion =
+      "What hurts them isn't just being asked to do the task, but that in front of your family you stayed silent or sided with them—so they feel like an outsider and that they can't count on you.";
+
+    zh.boundary =
+      "成熟的边界是：在你家，你要主动承担‘自己人’和‘家人’之间的缓冲。该你挡的你要挡，该你开口的你要开口，而不是让伴侣独自面对你父母的期待。";
+    en.boundary =
+      "A mature boundary means: in your home, you act as the buffer between your partner and your family. You step in when needed and speak up when it's your place—not leave your partner alone against your parents' expectations.";
+
+    zh.adviceForYou =
+      "你可以先承认：当时没站出来是我不对，让你在我家受委屈了。然后和父母沟通：下次 TA 来是客人，家务我们自己来。并让对方知道：以后类似情况你会先开口。";
+    en.adviceForYou =
+      "Start by acknowledging: I was wrong not to speak up; you shouldn't have been put in that position in my home. Then talk to your parents: when they visit, they're a guest; we'll handle chores. And let your partner know you'll speak up first next time.";
+
+    zh.adviceForThem =
+      "对方可以明确告诉你：我在意的不是那几只碗，而是你有没有把我当自己人护着。如果你愿意道歉并以后主动挡在前面，这件事可以翻篇。";
+    en.adviceForThem =
+      "They can tell you clearly: it's not about the dishes, it's about whether you had my back. If you're willing to apologize and step up next time, we can move on.";
+
+    zh.verdict =
+      "本案责任更多在没护着伴侣的一方。在你家、你家人面前，你有义务先开口、先挡一下，而不是让伴侣独自承受。对方因此生气和失望，是合理的。";
+    en.verdict =
+      "In this case, more responsibility lies with the one who didn't support their partner. In your home, in front of your family, you have a duty to speak up and buffer—not leave your partner to face it alone. Their anger and disappointment are justified.";
+
+    return {
+      zh,
+      en,
+      yourScore,
+      otherScore,
+      icebreaker: {
+        zh: "你先跟父母说清楚：下次 TA 来是客人，洗碗/干活我们自己来。再当面跟对方认一句：当时没站出来是我不对，以后我会先开口。",
+        en: "Tell your parents clearly: next time they visit as a guest, we'll handle the dishes/chores. Then say to your partner: I was wrong not to speak up; I'll step in first next time.",
+      },
+      longterm: {
+        zh: "在你家，你要做伴侣和父母之间的缓冲；该你挡的你要挡，该你开口的你要开口，伴侣才会觉得被当自己人。",
+        en: "In your home, you're the buffer between your partner and your family. When you step in and speak up, your partner feels they're treated as family.",
+      },
+    };
+  }
+
+  // 我过生日/节日没送对方礼物 + 否定对方想要被惦记的感受（如「男人要什么礼物」「历史是女人收的」）：责任更多在否定感受的一方
+  if (hasImportantDate && hasDismissPartnerGiftWish && hasNoGiftToPartnerAndTheyHurt) {
+    yourScore = 35;
+    otherScore = 65;
+
+    zh.fact =
+      "在生日或节日里，你没有送对方礼物，对方因此难过。你用‘男人要什么礼物’、‘历史是女人收的’等说法否定了 TA 想要被惦记、被重视的感受。";
+    en.fact =
+      "On a birthday or holiday you didn't give them a gift, and they were hurt. You dismissed their wish to be remembered and valued with lines like 'what do men need gifts for' or 'historically women receive them.'";
+
+    zh.core =
+      "核心不是‘谁该收礼物’，而是：对方表达‘我希望被你惦记’时，你有没有接住。用性别或传统来否定伴侣的感受，会让 TA 觉得自己的需求不被当回事。";
+    en.core =
+      "The core isn't who 'should' receive gifts, but whether you acknowledged their wish to be thought of. Dismissing your partner's feelings with gender or tradition makes them feel their needs don't matter.";
+
+    zh.emotion =
+      "对方难过的，不只是没收到礼物，而是：连‘我想要你想着我’这件事都被你否定了，会觉得自己在你心里不重要。";
+    en.emotion =
+      "What hurts them isn't just the missing gift, but that even 'I want you to think of me' got dismissed—they feel unimportant to you.";
+
+    zh.boundary =
+      "礼物是‘被惦记’的一种表达。对方有权希望在你重要的日子里也被你惦记；你可以量力而行，但不该用‘男人/女人不该要’来否定这种期待。";
+    en.boundary =
+      "Gifts are one way of showing 'you're on my mind.' They're allowed to want to be remembered on your day too; you can scale it to what you're comfortable with, but shouldn't dismiss that wish with 'men/women shouldn't expect gifts.'";
+
+    zh.adviceForYou =
+      "你可以先承认：你说‘男人要什么礼物’确实否定了他的感受，这不是你的本意。再问一句：你希望我怎么表达‘我有想着你’？不一定贵，可以是一张小卡片、一顿饭、一句提前的祝福，重点是让他感到被看见。";
+    en.adviceForYou =
+      "Acknowledge first: saying 'what do men need gifts for' did dismiss his feelings, and that wasn't your intent. Then ask: how would you like me to show I'm thinking of you? It doesn't have to be expensive—a card, a meal, a message in advance—the point is he feels seen.";
+
+    zh.adviceForThem =
+      "对方可以明确说：我在意的不是礼物贵不贵，而是你有没有把我放在心上。如果你愿意用你的方式补上一份心意，这件事可以翻篇。";
+    en.adviceForThem =
+      "They can say clearly: it's not about the price, it's about whether you had me in mind. If you're willing to show that in your way, we can move on.";
+
+    zh.verdict =
+      "本案责任更多在否定对方感受的一方。对方想要被惦记、被重视是合理的；用性别或传统来堵住这种需求，会让关系里的尊重感变少。";
+    en.verdict =
+      "In this case, more responsibility lies with the one who dismissed the other's feelings. Wanting to be remembered and valued is valid; using gender or tradition to shut that down weakens respect in the relationship.";
+
+    return {
+      zh,
+      en,
+      yourScore,
+      otherScore,
+      icebreaker: {
+        zh: "你主动说一句：那次是我不对，不该用‘男人要什么礼物’否定你的感受。然后问：你希望以后在这种日子里，我怎么让你感到被惦记？",
+        en: "Say once: I was wrong to dismiss you with 'what do men need gifts for.' Then ask: how would you like me to make you feel thought of on those days from now on?",
+      },
+      longterm: {
+        zh: "礼物是‘被惦记’的载体。对方有权希望在你重要的日子也被你想着；用你的方式表达就好，但别用性别或传统否定这种期待。",
+        en: "Gifts carry 'you're on my mind.' They're allowed to want that on your day too—show it in your way, but don't dismiss that wish with gender or tradition.",
+      },
+    };
+  }
+
+  // 对方做的难吃、我不想吃、对方怪我浪费：责任更多在“做得难吃还怪人不吃”的一方
+  if (hasBadCookingAndBlameWaste && hasCookingContext) {
+    yourScore = 62;
+    otherScore = 38;
+
+    zh.fact =
+      "对方做了饭，你觉得不好吃所以没吃或没吃完，对方因此怪你浪费、不领情。";
+    en.fact =
+      "They cooked, you found it unappealing so you didn't eat or didn't finish, and they blamed you for wasting or not appreciating it.";
+
+    zh.core =
+      "核心不是谁更挑剔，而是：食物不好吃时，不吃的选择是合理的；反过来用‘浪费’‘不领情’施压，是在用情绪绑架对方硬吃。责任更多在做得不好吃还怪人不吃的一方。";
+    en.core =
+      "The core isn't who's pickier, but that choosing not to eat when the food isn't good is reasonable. Pressuring with 'waste' or 'ungrateful' is emotional guilt-tripping. More responsibility lies with the one who made unappealing food and then blamed the other for not eating.";
+
+    zh.emotion =
+      "你不想吃难吃的东西是正常反应；被说浪费、不领情，会让人觉得自己的感受不被承认。";
+    en.emotion =
+      "Not wanting to eat unappealing food is a normal reaction; being called wasteful or ungrateful makes you feel your experience isn't acknowledged.";
+
+    zh.boundary =
+      "做饭的心意可以感谢，但‘难吃也要吃完否则就是浪费’不是健康的边界。可以一起商量：下次少做一点、或者谁负责试味，而不是单方面要求对方必须吃。";
+    en.boundary =
+      "You can appreciate the effort, but 'you must finish it or you're wasteful' isn't a healthy boundary. You can agree to cook less next time or share tasting duty, rather than demanding the other person eat anyway.";
+
+    zh.adviceForYou =
+      "你可以先说：谢谢你的心意，但这次真的不合我口味，不是故意浪费。以后我们可以一起商量做多少、做什么，避免你辛苦做了我又吃不下。";
+    en.adviceForYou =
+      "You can say: I appreciate the effort, but this one really wasn't to my taste—I'm not trying to waste. Next time we can decide together how much to make and what, so you don't cook a lot and I can't eat it.";
+
+    zh.adviceForThem =
+      "对方可以试着接受：口味是主观的，对方不吃不代表不领情。下次可以少做、或问一句想吃什么，比事后怪‘浪费’更能减少冲突。";
+    en.adviceForThem =
+      "They can try to accept: taste is subjective; not eating doesn't mean ungrateful. Next time cook less or ask what they'd like—that reduces conflict more than blaming 'waste' afterward.";
+
+    zh.verdict =
+      "本案责任更多在做得难吃还怪人不吃、用‘浪费’施压的一方。不强迫对方吃不合口味的东西，是基本尊重。";
+    en.verdict =
+      "In this case, more responsibility lies with the one who made unappealing food and then pressured the other with 'waste.' Not forcing someone to eat what they don't like is basic respect.";
+
+    return {
+      zh,
+      en,
+      yourScore,
+      otherScore,
+      icebreaker: {
+        zh: "一起约定：以后做饭先少做一点，或做前问一句对方想吃什么；吃不下可以留到下一顿，不拿‘浪费’来吵架。",
+        en: "Agree: cook smaller portions next time or ask what they want first; leftovers are fine, don't fight over 'waste.'",
+      },
+      longterm: {
+        zh: "口味不同很正常；用‘浪费’‘不领情’绑架对方吃，会伤关系。少做、多问，比硬要对方吃完更健康。",
+        en: "Different tastes are normal; guilting someone into eating with 'waste' or 'ungrateful' hurts the relationship. Cook less, ask more—healthier than demanding they finish.",
+      },
+    };
+  }
+
   // 事实层面：根据命中的维度拼接
   const zhFacts = [];
   const enFacts = [];
@@ -598,10 +797,10 @@ function analyzeCase(text) {
 
   zh.verdict =
     zh.verdict ||
-    "综合来看，你在这件事里的感受是有依据的，但如果想要关系继续走下去，接下来要从‘吵这一件事’，变成一起商量新的相处规则。";
+    "本庭不做明显倾斜。双方都有各自的感受和立场；如果想要关系继续走下去，接下来要从‘吵这一件事’，变成一起商量新的相处规则。";
   en.verdict =
     en.verdict ||
-    "Overall, your feelings in this situation are grounded. If you both want to continue, the next step is to move from arguing about this one event to designing new rules for how you relate.";
+    "This court does not lean clearly to either side. Both of you have your own feelings and positions; if you want the relationship to continue, the next step is to move from arguing about this one event to designing new rules for how you relate.";
 
   return { zh, en, yourScore, otherScore };
 }
